@@ -5,29 +5,27 @@ import { createTRPCContext } from "~/server/api/trpc";
 // import { db } from "~/server/db";
 
 import { PrismaClient } from "@prisma/client";
-const db = new PrismaClient();
+const prisma = new PrismaClient();
 
 export async function POST(req: Request) {
   const { messages }: { messages: CoreMessage[] } = await req.json();
   console.log("messages", messages);
-  // const chat = await db.chat.findOrCreate({
-  //   data: {
-  //     userId: "1", // Assuming we have one user
-  //   },
-  // });
-  //
-  // // Save the messages to the database
-  // const savedMessages = await Promise.all(
-  //   messages.map(async (message) => {
-  //     return db.message.findOrCreate({
-  //       data: {
-  //         content: message.content,
-  //         // chatId: chat.id,
-  //         authorId: "1", // Assuming we have one user
-  //       },
-  //     });
-  //   }),
-  // );
+  const chat = await prisma.chat.create({
+    data: {
+      name: "default-chat",
+    },
+  });
+
+  const savedMessages = await Promise.all(
+    messages.map(async (message) => {
+      return prisma.message.create({
+        data: {
+          content: message.content,
+          chatId: chat.id,
+        },
+      });
+    }),
+  );
   // Create the tRPC context
   // const ctx = await createTRPCContext(); // This should include Prisma and user session info if needed
   //
