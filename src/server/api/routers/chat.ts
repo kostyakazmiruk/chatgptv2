@@ -1,33 +1,44 @@
 import { z } from "zod";
-import { CoreMessage, streamText } from "ai";
+import { type CoreMessage, streamText } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
-import { PrismaClient } from "@prisma/client";
 
 export const chatRouter = createTRPCRouter({
-  sendMessage: publicProcedure
-    .input(
-      z.object({
-        chatId: z.string(),
-        messages: z.array(z.object({ role: z.string(), content: z.string() })),
-      }),
-    )
-    .mutation(async ({ input }) => {
-      const { chatId, messages } = input;
+  chatgpt: publicProcedure
+    .input(z.object({ messages: z.array(z.any()) })) // Define messages array input
+    .mutation(async ({ input, ctx }) => {
+      console.log("AM I HERE?");
+      const { messages } = input;
+      const userId = ctx.db.user?.id || "default-user-id"; // Use a real user ID if available
 
-      const result = await streamText({
-        model: openai("gpt-4"),
-        system: "You are a helpful assistant.",
-        messages,
+      // Find or create the chat with a fixed name/id for this user
+      let chat = await ctx.db.chat.findFirst({
+        where: { userId, name: "default-chat" },
       });
 
-      await ctx.prisma.message.create({
-        data: {
-          content: result.toString(),
-          chatId,
-        },
-      });
+      if (!chat) {
+        chat = await ctx.db.chat.create({
+          data: {
+            name: "default-chat",
+            userId,
+          },
+        });
+      }
 
-      return result.toDataStreamResponse();
+      // Save each message to the database, linking it to the chat
+      await Promise.all(
+        messages.map((message) =>
+          ctx.db.message.create({
+            data: {
+              content: message.content,
+              chatId: chat.id,
+              authorId: userId, // Assuming the user is the author
+            },
+          }),
+        ),
+      );
+
+      // Return the messages for further processing in route.ts
+      return { messages };
     }),
 });
