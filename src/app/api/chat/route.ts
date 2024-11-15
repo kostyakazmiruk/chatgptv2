@@ -22,7 +22,8 @@ export async function POST(req: Request) {
     messages.map(async (message) => {
       return prisma.message.create({
         data: {
-          content: message.content,
+          //@ts-ignore
+          content: message.content as any,
           chatId: chat.id,
         },
       });
