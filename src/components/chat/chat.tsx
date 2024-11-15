@@ -1,14 +1,17 @@
-// eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
 "use client";
 
 import { useChat } from "ai/react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Input } from "~/components/ui/input";
-import { api } from "~/trpc/react";
 
-function Chat() {
-  const { messages, input, setInput, append } = useChat();
-  // const chatgpt = await api.chat.chatgpt({ messages: messages });
+function Chat({ id }) {
+  const { messages, input, setInput, append, data, handleSubmit } = useChat({
+    id: toString(id),
+  });
+  console.log("data", data);
+  // const router = useRouter();
+  console.log("id", id);
+
   console.log("messages", messages);
 
   return (
@@ -42,6 +45,9 @@ function Chat() {
           }}
           onKeyDown={async (event) => {
             if (event.key === "Enter") {
+              // handleSubmit({
+              //   body: { content: input, role: "user", chatId: id },
+              // });
               append({ content: input, role: "user" });
               setInput("");
             }

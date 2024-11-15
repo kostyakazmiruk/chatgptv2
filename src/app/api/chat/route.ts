@@ -8,8 +8,10 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 export async function POST(req: Request) {
-  const { messages }: { messages: CoreMessage[] } = await req.json();
+  const { messages, chatId }: { messages: CoreMessage[]; chatId: any } =
+    await req.json();
   console.log("messages", messages);
+  console.log("req", req);
   const chat = await prisma.chat.create({
     data: {
       name: "default-chat",
